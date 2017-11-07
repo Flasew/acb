@@ -50,7 +50,7 @@ def hexprint(msg):
 class ACB:
     """Client program for the antenna control board. """
 
-    def __init__(self, port=None, baudrate=9600 timeout=1, **kwargs):
+    def __init__(self, port=None, baudrate=9600, timeout=1, **kwargs):
         """Constructor of ACB class. Uses serial communication. 
         
         Arguments:
@@ -222,7 +222,7 @@ class ACB:
         # scale values
         sapv = int(round(apos / 180.0 * (2 ** 23)))
         sepv = int(round(epos / 180.0 * (2 ** 23)) if epos >= 0 else \
-               round((epos + 360) / 180.0 * (2 ** 23)))
+               int(round((epos + 360) / 180.0 * (2 ** 23))))
         sarv = int(round(arate / 16.0 * (2 ** 15)))
         serv = int(round(erate / 16.0 * (2 ** 15)))
 
