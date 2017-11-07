@@ -50,21 +50,32 @@ def hexprint(msg):
 class ACB:
     """Client program for the antenna control board. """
 
-    def __init__(self, **kwargs):
-        """Constructor of ACB class. Communication protocol is currently
-        not implemented.
+    def __init__(self, port=None, baudrate=9600 timeout=1, **kwargs):
+        """Constructor of ACB class. Uses serial communication. 
         
         Arguments:
+            port {str} -- address of the serial port
+            baudrate {int} -- baudrate of the serial port
+            timeout {int} -- timeout of the serial port
             **kwargs {dictionary} -- extra arguments to be passed.
         """
+        self.port = port
+        self.ser = serial.Serial(port=port, 
+                                 baudrate=baudrate, 
+                                 timeout=timeout,
+                                 parity=serial.PARITY_NONE,
+                                 bytesize=serial.EIGHTBITS,
+                                 stopbits=serial.STOPBITS_ONE,
+                                 **kwargs)
+        if not self.ser.isOpen():
+            self.ser.open()
+
         self.trackbeam_count = 0    # number of track beam command issued,
                                     # needed for send such commands
         
     def receive(self, end=LF):
         """Read response from ACB until the @end character is hit.
         Timeout is recommended.
-        
-        Unimplemented for now
         
         Keyword Arguments:
             end {char} -- Read will return when this char is hit (default: {LF})
@@ -76,7 +87,19 @@ class ACB:
             eprint("[ACB] Invalid end character for receive")
             return None
 
-        return b""
+        eol = end
+        leneol = len(eol)
+        line = bytearray()
+        while True:
+            c = self.ser.read(1)
+            if c:
+                line += c
+                if line[-leneol:] == eol:
+                    break
+            else:
+                break
+        return bytes(line)
+
 
     def send(self, msg):
         """send @msg to the ACB.
@@ -89,7 +112,11 @@ class ACB:
         ReturnS:
             {int} number of bytes written.
         """
-        return 0
+        sent = self.ser.write(msg)
+        if sent != len(msg):
+            print("[ACB] Warning: {:d} bytes of data loss during transmission."\
+                .format(len(msg) - sent))
+        return sent
 
     def query(self, msg, waittime=0):
         """Send a command and receive the response.
